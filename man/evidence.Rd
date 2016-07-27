@@ -6,7 +6,7 @@
 \title{Evidence from extracted spatial inputs.}
 \description{
 A matrix. The collection of available spatial data (see above) as extracted from each location (i.e. cell) 
-  in the catchment, where the latter is represented by the raster object \code{currentLU}. Each value from the spatial data was 
+  in the catchment, where the latter is represented by the raster object \code{ConwyLU}. Each value from the spatial data was 
   discretized through \code{\link{dataDiscretize}} or \code{\link{bulkDiscretize}} functions, then assigned to the corresponding 
   state from the Bayesian network (LandUseChange).
 }

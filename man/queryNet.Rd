@@ -10,11 +10,11 @@ queryNet(network, target, evidence, ...)
 queryNetParallel(network, target, evidence, inparallel = TRUE, ...)
 }
 \arguments{
-\item{network}{The Bayesian network. An object of class "grain" (package \href{https://cran.r-project.org/package=gRain}{gRain}), or a character (the path to the ".net" file to be imported)}
+\item{network}{The Bayesian network. An object of class \code{grain} (from package \href{https://cran.r-project.org/package=gRain}{gRain}), or a character (the path to the \emph{.net} file to be imported)}
 
 \item{target}{character. The node of interest to be modelled and mapped.}
 
-\item{evidence}{matrix. Named columns are the known input variables; in rows are the discrete states associated to them for each record (NA allowed).}
+\item{evidence}{matrix or data.frame. Named columns are the known input variables; rows are the discrete states associated to them for each record (NA allowed).}
 
 \item{...}{Additional arguments to fix a state (i.e. setting evidence) to one or more nodes, 
 as known and independent from any spatial data (e.g. the case of non-spatial variables 
@@ -45,7 +45,6 @@ q <- queryNet(network, 'FinalLULC', evidence, Stakeholders = 'farmers')
 head(q)
 
 ## Use parallel processing
-library(doParallel)
 q <- queryNetParallel(network, 'FinalLULC', evidence, inparallel=2)
 head(q)
 

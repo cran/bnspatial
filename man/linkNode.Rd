@@ -13,7 +13,7 @@ linkMultiple(spatialData, network, lookup, verbose = TRUE)
 \arguments{
 \item{layer}{character (path to raster file) or an object of class "RasterLayer". The spatial data corresponding to the network node in argument \code{node}.}
 
-\item{network}{The Bayesian network. An object of class "grain" (package \href{https://cran.r-project.org/package=gRain}{gRain}), or a character (the path to the ".net" file to be imported)}
+\item{network}{The Bayesian network. An object of class \code{grain} (from package \href{https://cran.r-project.org/package=gRain}{gRain}), or a character (the path to the \emph{.net} file to be imported)}
 
 \item{node}{character. A network node associated to the file in \code{layer} argument}
 
@@ -23,7 +23,7 @@ linkMultiple(spatialData, network, lookup, verbose = TRUE)
 
 \item{verbose}{logical. If \code{verbose = TRUE} a summary of class boundaries and associated nodes and data will be printed to screen for quick checks.}
 
-\item{spatialData}{character. The raster files corresponding to nodes}
+\item{spatialData}{character or list of objects of class 'RasterLayer'. The raster files corresponding to nodes, as vector of full file paths or as list of rasters (objects of class 'RasterLayer').}
 
 \item{lookup}{character or a formatted list. This argument can be provided as path to a comma separated file or a formatted list (see \code{\link{setClasses}} )}
 }
@@ -41,13 +41,13 @@ In future releases, this function may be rewritten to provide an S4 object inste
 \examples{
 data(ConwyData)
 network <- LandUseChange
-lst <- linkNode(layer=currentLU, network, node='CurrentLULC', intervals=c(2, 3, 1))
+lst <- linkNode(layer=ConwyLU, network, node='CurrentLULC', intervals=c(2, 3, 1))
 lst
 
 ## Link the Bayesian network to multiple spatial data at once, using a lookup list
 data(ConwyData)
 network <- LandUseChange
-spatialData <- c(currentLU, slope, status)
+spatialData <- c(ConwyLU, ConwySlope, ConwyStatus)
 lookup <- LUclasses
 linkMultiple(spatialData, network, lookup, verbose = FALSE)
 }

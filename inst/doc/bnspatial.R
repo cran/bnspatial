@@ -1,9 +1,30 @@
+## ---- eval=FALSE---------------------------------------------------------
+#  source("http://bioconductor.org/biocLite.R")
+#  biocLite("RBGL")
+
+## ---- eval=FALSE---------------------------------------------------------
+#  install.packages("bnspatial")
+
+## ---- eval=FALSE---------------------------------------------------------
+#  ## Install the required packages
+#  source("http://bioconductor.org/biocLite.R")
+#  biocLite("RBGL")
+#  install.packages("gRain", repos="http://cran.uk.r-project.org/", dependencies=T, clean=T)
+#  install.packages("raster", repos="http://cran.uk.r-project.org/", dependencies=T, clean=T)
+#  
+#  ## Install bnspatial (full path to the file, if not in the R working directory)
+#  install.packages("~/bnspatial_0.9.tar.gz", repos = NULL, type="source")
+
+## ---- eval=FALSE---------------------------------------------------------
+#  help(package=bnspatial) ## opens package index
+#  ?bnspatial ## help file for the main function
+
 ## ---- message=FALSE, warning=FALSE, results='hide', fig.height=4, fig.width=6----
 ## Loading package and data stored in it
 library(bnspatial)
 data(ConwyData)
 network <- LandUseChange
-spatialData <- c(currentLU, slope, status)
+spatialData <- c(ConwyLU, ConwySlope, ConwyStatus)
 lookup <- LUclasses
 target <- 'FinalLULC'
 
@@ -36,7 +57,7 @@ bn <- bnspatial(network, 'FinalLULC', spatialData, lookup, verbose=FALSE)
 #  bn <- bnspatial(network, 'FinalLULC', spatialData, lookup)
 
 ## ---- message=FALSE, warning=FALSE, results='hide', fig.height=4, fig.width=6----
-bn <- bnspatial(network, 'FinalLULC', spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, 'FinalLULC', spatialData, lookup, msk=ConwyLU, 
                    what="probability", targetState=c("arable","forest"))
 par(mfrow=c(1,2))
 plot(bn$Probability$forest, main="Probability of forest")
@@ -45,25 +66,25 @@ plot(bn$Probability$arable, main="Probability of arable land")
 ## ---- message=FALSE, warning=FALSE, results='hide', fig.height=8, fig.width=6----
 par(mfrow=c(2,2))
 
-bn <- bnspatial(network, "RelativePreference", spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, "RelativePreference", spatialData, lookup, msk=ConwyLU, 
                    Scenarios="intensification")
 plot(bn$Class, main="Intensification scenario")
 plot(bn$Entropy, main="Uncertainty (Shannon index)")
 
-bn <- bnspatial(network, 'RelativePreference', spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, 'RelativePreference', spatialData, lookup, msk=ConwyLU, 
                    Scenarios="sustainable")
 plot(bn$Class, main="Sustainability scenario")
 plot(bn$Entropy, main="Uncertainty (Shannon index)")
 
-## ---- message=FALSE, warning=FALSE, results='hide', fig.height=8, , fig.width=6, echo=-c(1:2)----
+## ---- message=FALSE, warning=FALSE, results='hide', fig.height=8, fig.width=6, echo=-c(1:2)----
 par(mfrow=c(2,2))
 
-bn <- bnspatial(network, "RelativePreference", spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, "RelativePreference", spatialData, lookup, msk=ConwyLU, 
                    what="probability", targetState=c("forest","arable"), Scenarios="intensification")
 plot(bn$Probability$forest, main="P of forest preference (intensif.)")
 plot(bn$Probability$arable, main="P of arable preference (intensif.)")
 
-bn <- bnspatial(network, 'RelativePreference', spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, 'RelativePreference', spatialData, lookup, msk=ConwyLU, 
                    what="probability", targetState=c("forest","arable"), Scenarios="sustainable")
 plot(bn$Probability$forest, main="P of forest preference (sustain.)")
 plot(bn$Probability$arable, main="P of arable preference (sustain.)")
@@ -73,12 +94,12 @@ par(mfrow=c(2,2))
 
 midValues <- c(175, 75, 15)
 
-bn <- bnspatial(network, "CarbonStock", spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, "CarbonStock", spatialData, lookup, msk=ConwyLU, 
                    midvals=midValues, what=c("expected","variation"), Scenarios="intensification")
 plot(bn$ExpectedValue, main="Expected carbon (t/ha) (intensif.)")
 plot(bn$CoeffVariation, main="Uncertainty (coeff. variation)")
 
-bn <- bnspatial(network, "CarbonStock", spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, "CarbonStock", spatialData, lookup, msk=ConwyLU, 
                    midvals=midValues, what=c("expected","variation"), Scenarios="sustainable")
 plot(bn$ExpectedValue, main="Expected carbon (t/ha) (sustain.)")
 plot(bn$CoeffVariation, main="Uncertainty (coeff. variation)")
@@ -98,17 +119,17 @@ plot(bn$CoeffVariation, main="Uncertainty (coeff. variation)")
 #  intervals
 
 ## ---- eval=FALSE---------------------------------------------------------
-#  spatialData <- c(currentLU, slope, status)
+#  spatialData <- c(ConwyLU, ConwySlope, ConwyStatus)
 #  spatialDataList <- linkMultiple(spatialData, network, intervals)
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  ## Return coordinates of valid cells inside the mask instead of a raster layer
-#  msk <- aoi(spatialData, xy=TRUE)
+#  msk <- aoi(spatialData, msk=ConwyLU, xy=TRUE)
 #  head(msk)
 
 ## ---- eval=FALSE---------------------------------------------------------
-#  m <- aoi(msk=currentLU, mskSub=c(2,3))
-#  head( extractByMask(slope, msk=m), 20)
+#  m <- aoi(msk=ConwyLU, mskSub=c(2,3))
+#  head( extractByMask(ConwySlope, msk=m), 20)
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  s <- runif(30)
@@ -123,7 +144,7 @@ plot(bn$CoeffVariation, main="Uncertainty (coeff. variation)")
 ## ---- eval=FALSE---------------------------------------------------------
 #  target <- 'FinalLULC'
 #  statesProb <- queryNet(network, target, evidence)
-#  maps <- mapTarget(target, statesProb, msk=currentLU)
+#  maps <- mapTarget(target, statesProb, msk=ConwyLU)
 #  maps
 #  
 #  par(mfrow=c(1,2))

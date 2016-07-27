@@ -22,16 +22,16 @@ a vector, or an object of class "RasterLayer". The values from the input raster 
 This function extracts the values from a given input raster based on a mask.
 }
 \details{
-When input data given to \code{rast} does not match the resolution and extent of a raster mask argument, the latter is preferred. The function will therefore return a vector of n elements, one for each non NA cell in the mask.
+When input data given to \code{rast} does not match the resolution and extent of a raster mask argument, the latter is preferred. The function will therefore return a vector of n elements, one for each non NA cell in the mask. Input raster cells falling inside mask cells, but not over their cells centre will be ignored.
 }
 \examples{
 data(ConwyData)
-m <- aoi(msk=currentLU, mskSub=c(2,3))
-head( extractByMask(slope, msk=m), 20) 
+m <- aoi(msk=ConwyLU, mskSub=c(2,3))
+head( extractByMask(ConwySlope, msk=m), 20) 
 
 # Extract making a raster
 library(raster)
-plot( extractByMask(slope, msk=m, spatial=TRUE) )
+plot( extractByMask(ConwySlope, msk=m, spatial=TRUE) )
 }
 \seealso{
 \code{\link{aoi}}

@@ -16,9 +16,46 @@ This document describes the package *bnspatial*. The package is aimed at impleme
 The package is designed to facilitate the spatial implementation of Bayesian networks with minimal knowledge of the R programming language. R provides a single consistent working environment, while currently available options to make maps out of Bayesian networks do not. The package acts partly as function wrapper integrating the packages [*raster*](https://cran.r-project.org/package=raster) and [*gRain*](https://cran.r-project.org/package=gRain), but offers some additional features too, including powerful parallel processing options (via [*foreach*](https://cran.r-project.org/package=foreach) package) and data discretization routines.   Bayesian networks must be constructed beforehand, either in R, with [*gRain*](https://cran.r-project.org/package=gRain) or [*bnlearn*](https://cran.r-project.org/package=bnlearn) packages, or via an external software, such as [GeNIe](http://www.bayesfusion.com/) (free for academic use) or [Hugin](http://hugin.com/productsservices), and saved in .net file format (Hugin native format); .net files can then be imported in *bnspatial*. Currently, .net files written with [Netica](https://www.norsys.com/) are not supported, due to reading issues which are encountered by Hugin itself. A workaround is to import Netica files to GeNIe and save to .net from there.   In *bnspatial*, Bayesian networks are objects of class `grain` and therefore are queried through the functions provided by the *gRain* package. All basic GIS tasks are performed through the *raster* package and spatial data are objects of its native class `RasterLayer`.  
 Bug reports and suggestions can be submitted at https://github.com/dariomasante/bnspatial/issues .
 
-## A quick tour: setting the scene
-The folowing example shows the use of *bnspatial* in a hypotetical land use change context and is inspired by works like Celio et al.[^1]. The aim is to analyze how different factors can influence land use change and where the change is most likely to occur.  
-A Bayesian network was built and its conditional probability table populated, in order to catch some of the relevant drivers of land use change in a sample catchment (Conwy, North Wales, UK). The links in the network reflect the relationships among variables: slope, legal status and current land use are assumed to be independent, as well as two hypotetical scenarios. One of them, intensification, predicts increase in demand and prices of agricultural products, while the other entails a more balanced management of natural resources, including measures for climate change mitigation, such as payments for carbon storage. Legal status of land determines a different level of direct or indirect involvement of stakeholders in land management and explain the link directed from it. Overall, change is defined by a combination of factors: stakeholder preferences, suitability of land for a given use (simplified with a single variable, slope) and the current land use, as a proxy for past suitability and preferences. Under protection, a given land use may or may not change, quite independently from other factors.  
+#### Acknowledgements
+Development was partly funded by the European Union FP7 (2007-2013), under project ROBIN - Role Of Biodiversity In climate change mitigation (agreement 283093).
+
+## Installation notes
+bnspatial requires *gRain* package installed beforehand. To install, open a R session and enter the following commands:
+```{r, eval=FALSE}
+source("http://bioconductor.org/biocLite.R")
+biocLite("RBGL")
+```
+Then install *bnspatial*, by selecting it from the packages list, or typing in the console:
+```{r, eval=FALSE}
+install.packages("bnspatial")
+```
+
+Alternatively, to install from source:
+- download the [.tar.gz source file](https://cran.r-project.org/package=bnspatial) to the R working directory (or any other directory)
+- start an R session
+- run the following commands in the console:
+``` {r, eval=FALSE}
+## Install the required packages 
+source("http://bioconductor.org/biocLite.R")
+biocLite("RBGL")
+install.packages("gRain", repos="http://cran.uk.r-project.org/", dependencies=T, clean=T)
+install.packages("raster", repos="http://cran.uk.r-project.org/", dependencies=T, clean=T)
+
+## Install bnspatial (full path to the file, if not in the R working directory)
+install.packages("~/bnspatial_0.9.tar.gz", repos = NULL, type="source")
+```
+
+Reference manual: [bnspatial.pdf](https://cran.r-project.org/web/packages/bnspatial/bnspatial.pdf)  
+Vignettes: [Overview of package 'bnspatial'](https://cran.r-project.org/web/packages/bnspatial/vignettes/bnspatial.html)  
+Also from R console:
+```{r, eval=FALSE}
+help(package=bnspatial) ## opens package index
+?bnspatial ## help file for the main function
+```
+
+## A worked example: setting the scene
+The following example shows the use of *bnspatial* in a hypothetical land use change context and is inspired by works like Celio et al.[^1]. The aim is to analyse how different factors can influence land use change and where the change is most likely to occur.  
+A Bayesian network was built and its conditional probability table populated, in order to catch some of the relevant drivers of land use change in a sample catchment (Conwy, North Wales, UK). The links in the network reflect the relationships among variables: slope, legal status and current land use are assumed to be independent, as well as two hypothetical scenarios. One of them, intensification, predicts increase in demand and prices of agricultural products, while the other entails a more balanced management of natural resources, including measures for climate change mitigation, such as payments for carbon storage. Legal status of land determines a different level of direct or indirect involvement of stakeholders in land management and explain the link directed from it. Overall, change is defined by a combination of factors: stakeholder preferences, suitability of land for a given use (simplified with a single variable, slope) and the current land use, as a proxy for past suitability and preferences. Under protection, a given land use may or may not change, quite independently from other factors.  
 The simplified land use map under current and modelled conditions contains only three land use classes: arable, forest and other. The "final" land use type to be modelled depends on a set of drivers: some of them vary spatially (slope, legal status and current land use), while some other do not (socio-economic setting and stakeholder preferences). The model links the land use types to carbon stock as well, summarised under three broad categories identified as high, moderate or low.  
 Together with the spatial data and the network, a lookup list must be provided, to link properly the nodes from the network to the spatial data in input.  
 
@@ -27,16 +64,16 @@ Together with the spatial data and the network, a lookup list must be provided, 
 In this example the following questions are asked:  
 
 * What is the most likely outcome given the known conditions? What land use type can be expected under current conditions?
-* If a range of conditions are set to reflect a scenario, what outcome can be expected? Are the proportions of forest and arable land expected to change under intensification or suistainable scenarios?
+* If a range of conditions are set to reflect a scenario, what outcome can be expected? Are the proportions of forest and arable land expected to change under intensification or sustainable scenarios?
 * What are the uncertainties associated to the modelled variable of interest (target node)? What is the likelihood of having forest and how uncertain is the land use output?
 * Can we quantify the expected change in a given variable? Is carbon stock expected to increase under sustainable scenario and how is carbon stock distributed when accounting for uncertainty in the model? 
 
 Below a brief description of the data (also accessed through command `?ConwyData` in R console), which are available both as raw data (i.e. file of different formats), in the *extdata* folder under *bnspatial* package directory, and as objects in native R binary format, for a quicker access and code conciseness.    
 
 * LandUseChange (LandUseChange.net): the Bayesian network.
-* currentLU (CurrentLULC.tif): a simplified version of the current land use map from the Conwy catchment (Wales, UK). It includes three classes: arable (raster value 3), forest (2), other (1).
-* slope (degSlope.tif): a raster of slope derived from a digital elevation model at 50 meters resolution, units are degrees.
-* status (LegalStatus.tif): the land ownership (dummy data), divided into three possible classes: public (raster value 4), private (3), protected (1).
+* ConwyLU (ConwyLU.tif): a simplified version of the current land use map from the Conwy catchment (Wales, UK). It includes three classes: arable (raster value 3), forest (2), other (1).
+* ConwySlope (ConwySlope.tif): a raster of slope derived from a digital elevation model at 50 meters resolution, units are degrees.
+* ConwyStatus (ConwyStatus.tif): the land ownership (dummy data), divided into three possible classes: public (raster value 4), private (3), protected (1).
 * evidence: a matrix, the collection of previous spatial data as extracted from each location (i.e. raster cell) in the catchment. Each value from the spatial data was discretized through `dataDiscretize` or `bulkDiscretize` functions, then assigned to the corresponding state from the Bayesian network (LandUseChange).
 * LUclasses (LUclasses.txt): the look up list and classification of input spatial data (corresponding states and values). The list is formatted accordingly to *bnspatial* functions requirements and as returned by functions `importClasses` and `setClasses`.
 
@@ -49,7 +86,7 @@ In the following the main function `bnspatial` will be used to query the network
 library(bnspatial)
 data(ConwyData)
 network <- LandUseChange
-spatialData <- c(currentLU, slope, status)
+spatialData <- c(ConwyLU, ConwySlope, ConwyStatus)
 lookup <- LUclasses
 target <- 'FinalLULC'
 
@@ -70,7 +107,7 @@ plot(bn$Entropy, main='Uncertainty (Shannon index)')
 bn <- bnspatial(network, 'FinalLULC', spatialData, lookup, verbose=FALSE)
 ```
 
-Maps from the previous example can be greatly improved by setting additional arguments, for instance `msk=currentLU`, which masks the output map to the `currentLU` only, instead of the union of all spatial inputs (default). However, the example shows how the Bayesian network is able to produce coherent outputs even under missing values, such as the case of background areas external to the catchment, for which spatial values are missing.
+Maps from the previous example can be greatly improved by setting additional arguments, for instance `msk=ConwyLU`, which masks the output map to the `ConwyLU` only, instead of the union of all spatial inputs (default). However, the example shows how the Bayesian network is able to produce coherent outputs even under missing values, such as the case of background areas external to the catchment, for which spatial values are missing.
 
 ## Loading external data {#anchor}
 For ease of use, *bnspatial* allows the use of external files in input, which can be handy if the user resorted to external software to build the Bayesian network. In particular, the network itself and the classification file, used to link node states to the input spatial data, may be compiled more easily outside R. For conciseness, the data used in this document is loaded from the R binary format which comes with the package, i.e. was already transformed in a suitable format for direct use in *bnspatial* (including spatial data). However, the same data are provided in raw format as well (see sub-directory *extdata* under *bnspatial* directory).    
@@ -90,7 +127,7 @@ bn <- bnspatial(network, 'FinalLULC', spatialData, lookup)
 ```
 `'fullPath/toPackageLibrary/'` stands for the full path to the package library sub-directory, under R directory.
 
-The text file (`lookup` argument) is the only object that the user has to build from scratch. This can be done with any text editor, then imported for use in *bnspatial* with fucntion `importClasses`. Alternatively, the user can build it directly in R by using the function`setClasses`, then optionally export to .txt for future reference setting argument `wr`. 
+The text file (`lookup` argument) is the only object that the user has to build from scratch. This can be done with any text editor, then imported for use in *bnspatial* with fucntion `importClasses`. Alternatively, the user can build it directly in R by using the function `setClasses`, then optionally export to .txt for future reference setting argument `wr`. 
 
 As a general guideline, the text file should be formatted as follows, for each node:  
   
@@ -111,7 +148,7 @@ In the above example, the external .txt appears as follows:
   
 Please refer to help pages for `setClasses` and `importClasses` for further details (`?setClasses` from R console).
 
-Under current release, Bayesian networks from external software must be provided in .net format. The use of either GeNIe (free for academic use) or Hugin is recommended to build the Bayesian networks, as both can export them successfully to the .net format. Currently, .net files written with Netica are not supported, due to reading issues which are encountered by Hugin itself. A workaround is to open Netica networks with GeNIe and export to .net from there.  
+Under current release, Bayesian networks from external software must be provided in .net format. The use of either GeNIe (free for academic use) or Hugin is recommended to build the Bayesian networks, as both can export them successfully to the .net format (.net is the native format for Hugin). Currently, .net files written by Netica 5.24 are not supported, due to loading issues which are encountered by Hugin itself. A workaround is to open Netica networks with GeNIe and export to .net from there.  
 The use of [*gRain*](https://cran.r-project.org/package=gRain) or [*bnlearn*](https://cran.r-project.org/package=bnlearn) packages is recommended for building and manipulating Bayesian networks in the R environment. If the network was built with *bnlearn*, through the function `as.grain` it can be exported to an object of class `grain`, suitable for *bnspatial*.  
 All input spatial data must be in raster format, no vector data is accepted. Categorical data in shapefile format, for instance, must be converted to raster. Functionalities to accept other file formats for networks and vector data formats are planned for future releases. Packages [*rgdal*](https://cran.r-project.org/package=rgdal), [*raster*](https://cran.r-project.org/package=raster) and [*sp*](https://cran.r-project.org/package=sp) offer a great deal of GIS tools for R, including a complete range of read/write functionalities.  
 
@@ -122,7 +159,7 @@ Other outputs can be obtained, by adding or removing the following to the argume
 * `class` (default) returns the relatively most likely state of the target node (expected state).  
 * `entropy` (default) calculates the Shannon index and returns the entropy given the state probabilities:
 $$-\sum_{i=1}^n p_i ln(p_i)$$ where $p_i$ is the probability associated to the state $i$ of target node.  
-* `probability` returns an object for each state of the target node, with associated probability.  
+* `probability` returns a map of probability for each (selected) state of the target node.  
 * `expected` returns the expected value for the target node. Only valid for continuous target nodes. `midValues` argument must be provided. The expected value is calculated by summing the mid values of target node states weighted by their probability:
  $$p_1 * mid_1 + p_2 * mid_2 + ... + p_n * mid_n$$ where $mid_n$ is the mid value of the $n^{t_h}$ state of a node.
 * `variation` returns the coefficient of variation, as a measure of uncertainty: 
@@ -130,7 +167,7 @@ $$\frac{\sqrt{\sum_{i=1}^n (mid_i - val)^{2} * p_i}}{val}$$ where $val$ is the e
 
 So for instance, the following command will produce two maps, one of probability of land use to be *forest* and the other for *arable*:
 ```{r, message=FALSE, warning=FALSE, results='hide', fig.height=4, fig.width=6}
-bn <- bnspatial(network, 'FinalLULC', spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, 'FinalLULC', spatialData, lookup, msk=ConwyLU, 
                    what="probability", targetState=c("arable","forest"))
 par(mfrow=c(1,2))
 plot(bn$Probability$forest, main="Probability of forest")
@@ -144,27 +181,27 @@ The user may be interested in exploring the likelihood of outcome for a target n
 ```{r, message=FALSE, warning=FALSE, results='hide', fig.height=8, fig.width=6}
 par(mfrow=c(2,2))
 
-bn <- bnspatial(network, "RelativePreference", spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, "RelativePreference", spatialData, lookup, msk=ConwyLU, 
                    Scenarios="intensification")
 plot(bn$Class, main="Intensification scenario")
 plot(bn$Entropy, main="Uncertainty (Shannon index)")
 
-bn <- bnspatial(network, 'RelativePreference', spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, 'RelativePreference', spatialData, lookup, msk=ConwyLU, 
                    Scenarios="sustainable")
 plot(bn$Class, main="Sustainability scenario")
 plot(bn$Entropy, main="Uncertainty (Shannon index)")
 ```
 
 No big differences are noticed, mainly because preferences do not change sensibly in relative terms. However uncertainty of outcome is quite different between the two scenarios. This is further explained by mapping the probabilities of preference for *forest* and *arable* under the two scenarios:
-```{r, message=FALSE, warning=FALSE, results='hide', fig.height=8, , fig.width=6, echo=-c(1:2)}
+```{r, message=FALSE, warning=FALSE, results='hide', fig.height=8, fig.width=6, echo=-c(1:2)}
 par(mfrow=c(2,2))
 
-bn <- bnspatial(network, "RelativePreference", spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, "RelativePreference", spatialData, lookup, msk=ConwyLU, 
                    what="probability", targetState=c("forest","arable"), Scenarios="intensification")
 plot(bn$Probability$forest, main="P of forest preference (intensif.)")
 plot(bn$Probability$arable, main="P of arable preference (intensif.)")
 
-bn <- bnspatial(network, 'RelativePreference', spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, 'RelativePreference', spatialData, lookup, msk=ConwyLU, 
                    what="probability", targetState=c("forest","arable"), Scenarios="sustainable")
 plot(bn$Probability$forest, main="P of forest preference (sustain.)")
 plot(bn$Probability$arable, main="P of arable preference (sustain.)")
@@ -181,12 +218,12 @@ par(mfrow=c(2,2))
 
 midValues <- c(175, 75, 15)
 
-bn <- bnspatial(network, "CarbonStock", spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, "CarbonStock", spatialData, lookup, msk=ConwyLU, 
                    midvals=midValues, what=c("expected","variation"), Scenarios="intensification")
 plot(bn$ExpectedValue, main="Expected carbon (t/ha) (intensif.)")
 plot(bn$CoeffVariation, main="Uncertainty (coeff. variation)")
 
-bn <- bnspatial(network, "CarbonStock", spatialData, lookup, msk=currentLU, 
+bn <- bnspatial(network, "CarbonStock", spatialData, lookup, msk=ConwyLU, 
                    midvals=midValues, what=c("expected","variation"), Scenarios="sustainable")
 plot(bn$ExpectedValue, main="Expected carbon (t/ha) (sustain.)")
 plot(bn$CoeffVariation, main="Uncertainty (coeff. variation)")
@@ -201,8 +238,8 @@ However, these options do not prevent `bnspatial` from repeatedly loading and di
 
 ## Speeding up: parallel processing
 When the scale of analysis is very wide or spatial data has high resolution, computation time can be significant. To speed up the network querying, parallel processing options are provided in *bnspatial*, integrating the powerful functions from [*foreach*](https://cran.r-project.org/package=foreach) package and applying them in complete autonomy.
-When using parallel processing options, care should be paid to the RAM commitment, as memory should be sufficient to contain all data being processed in parallel (use of memory can be easily checked from Task Manager in Windows systems). Ssolutions to this issue are currently under implementation.  
-To apply parallel processing, simply set `inparallel=TRUE`. By default the number of tasks will be the number of cores/processors available minus one. If a different number of tasks is required, that number can be set, e.g. `inparallel=2` will use two cores. A higher number of tasks than number of cores/processors can be provided, but there are potential shortcomings and the user should avoid that choice, unless knowing exactly the reason fot it.
+When using parallel processing options, care should be paid to the RAM commitment, as memory should be sufficient to contain all data being processed in parallel (use of memory can be easily checked from Task Manager in Windows systems). Solutions to this issue are currently under implementation.  
+To apply parallel processing, simply set `inparallel=TRUE`. By default the number of tasks will be the number of cores/processors available minus one. If a different number of tasks is required, that number can be set, e.g. `inparallel=2` will use two cores. A higher number of tasks than number of cores/processors can be provided, but there are potential shortcomings and the user should avoid that choice, unless knowing exactly the reason for it.
 ```{r, eval=FALSE}
 bn <- bnspatial(network, 'FinalLULC', spatialData, lookup, inparallel=2)
 ```
@@ -219,21 +256,23 @@ File names can't be provided, as they are set automatically, depending on the ou
 * `"expected"` to *``<target node name>_ExpectedValue.<file format>``*
 * `"variation"` to *``<target node name>_CoefVariation.<file format>``*
 
-An additional comma separated file (.csv) is written to the same directory when `"class"`}, providing a key to relate the raster values to the node states they refer to.
+An additional comma separated file (.csv) is written to the same directory when `what` argument is `"class"`, providing a key to relate the raster values to the node states they refer to.
+
+---------------
 
 ## Unfolding *bnspatial* functions {#anchor2}
 The function `bnspatial` is actually a wrapper for a bunch of other functions. Below the same example as above is used, but using explicitly the functions underneath `bnspatial`. These can all be accessed independently from the user and offer many more options to handle and process the network spatially.
 
-#### `loadNetwork`
-The first step is loading the Bayesian network from an external file format. In the example, *LandUseChange.net* can be found at the *extdata* subfolder of bnspatial, under the the R package library directory. To load the network:
+### `loadNetwork`
+The first step is loading the Bayesian network from an external file format. In the example, *LandUseChange.net* can be found at the *extdata* subfolder of bnspatial, under the R package library directory. To load the network:
 ```{r, eval=FALSE}
 network <- loadNetwork(LandUseChange, target='FinalLULC')
 network
 ```
 An object of class `grain` is returned. Optional argument `target` should be set when known, as it will speed up the network query remarkably.
 
-#### `setClasses` ; `importClasses`
-These functions are meant to import, read and/or export of a list or text file, to be used for the integration and error checking of Bayesian network and input spatial variables. See `?setClasses` for details.
+### `setClasses` and `importClasses`
+These functions are meant to import, read or export a list or a text file, containing the known nodes and the values delimiting their respective states. Outputs returned by this functions are exactly the same, to be used for the integration and error checking of Bayesian network and input spatial variables. See `?setClasses` for details. Here we use a simple txt file and import it:
 ```{r, eval=FALSE}
 fullpath <- system.file("extdata", "LUclasses.txt", package = "bnspatial")
 fullpath
@@ -242,28 +281,29 @@ intervals <- importClasses(fullpath)
 intervals
 ```
 
-#### `linkNode` ; `linkMultiple`
-`linkNode` links a node of the Bayesian network to its corresponding spatial dataset (in raster format), returning a list of objects, including the spatial data and relevant information about the node. `linkMultiple` operates on multiple rasters and nodes.
+### `linkNode` and `linkMultiple`
+`linkNode` links a node of the Bayesian network to its corresponding spatial dataset (in raster format), returning a list of objects, including the spatial data and relevant information about the node. `linkMultiple` operates over multiple rasters and nodes, and requires a look up list to match correctly spatial data and related knodes of the network (this list is easily generated with `setClasses` or `importClasses`).
 ```{r, eval=FALSE}
-spatialData <- c(currentLU, slope, status)
+spatialData <- c(ConwyLU, ConwySlope, ConwyStatus)
 spatialDataList <- linkMultiple(spatialData, network, intervals)
 ```
 
-#### `aoi`
-Create a mask within which the query is performed. A subset of the data can be provided with argument `mskSub`
+### `aoi`
+Create a mask within which the query is performed. Not all cells of a geographical area may be of interest and just passing them all to the query and mapping functions may significantly increase processing time and return unwanted coverages. This function creates a raster (or coordinates of points) defining the area of interest using a user defined mask, whose resolution and extent will be inherited to the output maps. When msk is not specified input rasters will be united to the finest resolution among them and to the maximum extent enclosing them. This may potentially create huge rasters, so it is better to provide a mask. A subset of the data can be provided with argument `mskSub`, if a subset of values from a layer has to be used as mask. 
+Below we use one of the input rasters as mask, defining outline, extent and resolution of final maps. Note also argument `xy`, which will be used to return coordinates of valid cells from mask, rather than a raster, as the mask is just an intermediate step and no spatial data is required. This way will speed up processing and avoid the creation of unnecessary objects in memory.
 ```{r, eval=FALSE}
 ## Return coordinates of valid cells inside the mask instead of a raster layer
-msk <- aoi(spatialData, xy=TRUE)
+msk <- aoi(spatialData, msk=ConwyLU, xy=TRUE)
 head(msk)
 ```
 
-#### `extractByMask`
-This function extracts the values from a given input raster based on a mask.
+### `extractByMask`
+This function extracts the values from a given input raster based on a mask. Can be useful for data analysis on rasters and generic GIS tasks.
 ```{r, eval=FALSE}
-m <- aoi(msk=currentLU, mskSub=c(2,3))
-head( extractByMask(slope, msk=m), 20)
+m <- aoi(msk=ConwyLU, mskSub=c(2,3))
+head( extractByMask(ConwySlope, msk=m), 20)
 ```
-#### `dataDiscretize` ; `bulkDiscretize`
+### `dataDiscretize` ; `bulkDiscretize`
 These functions discretize continuous input data into classes. Classes can be defined by the user or, if the user provides the number of expected classes, calculated from quantiles (default option) or by equal intervals. 
 ```{r, eval=FALSE}
 s <- runif(30)
@@ -271,20 +311,19 @@ s <- runif(30)
 ## Split by user defined values. Values out of boundaries are set to NA:
 dataDiscretize(s, classBoundaries = c(0.2, 0.5, 0.8))
 ```
-#### `queryNet` ; `queryNetParallel`
-Queries the Bayesian network and returns the probabilities for each state of the target node. Available input variables are set as evidence. 
-`queryNetParallel` works as `queryNet`, but makes use of multi cores/processors facilities for big network queries, by splitting data into chunks and processing them in parallel.
+### `queryNet` ; `queryNetParallel`
+Queries the Bayesian network and returns the probabilities for each state of the target node. Available input variables are set as evidence. `queryNetParallel` works as `queryNet`, but makes use of multi cores/processors facilities for big network queries, by splitting data into chunks and processing them in parallel. Static evidence can be provided for any node of the network independently from availability of spatial data. This is useful to test scenarios for instance, where the user may control specific nodes (type `?queryNet` in the console to see an example). 
 ```{r, eval=FALSE}
 q <- queryNet(network, 'FinalLULC', evidence)
 head(q)
 ```
 
-#### `mapTarget`
-This function creates the required spatial outputs for the target node. By default most relatively lilkely class and entropy (uncertainty) associated are returned. More options available, see `?mapTarget`
+### `mapTarget`
+This function creates the required spatial outputs for the target node. By default most relatively likely class and entropy (uncertainty) associated are returned. More options available (see `?mapTarget`), including returning matrix of coordinates and values rather than spatial data (`spatial=TRUE`) or automatic export to any of the common GIS raster format (`exportRaster=TRUE` will save rasters as .tif by default). 
 ```{r, eval=FALSE}
 target <- 'FinalLULC'
 statesProb <- queryNet(network, target, evidence)
-maps <- mapTarget(target, statesProb, msk=currentLU)
+maps <- mapTarget(target, statesProb, msk=ConwyLU)
 maps
 
 par(mfrow=c(1,2))

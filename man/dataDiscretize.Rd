@@ -74,11 +74,11 @@ dataDiscretize(s, classBoundaries=c(-Inf, 0.5, Inf), classStates=c("first", "sec
 ## Discretize multiple spatial data by location
 data(ConwyData)
 network <- LandUseChange
-spatialData <- c(currentLU, slope, status)
+spatialData <- c(ConwyLU, ConwySlope, ConwyStatus)
 
 # Link multiple spatial data to the network nodes and discretize
 spDataLst <- linkMultiple(spatialData, network, LUclasses, verbose = FALSE)
-coord <- aoi(currentLU, xy=TRUE)
+coord <- aoi(ConwyLU, xy=TRUE)
 head( bulkDiscretize(spDataLst, coord) )
 }
 

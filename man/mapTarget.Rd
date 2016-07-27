@@ -11,7 +11,7 @@ mapTarget(target, statesProb, what = c("class", "entropy"), msk,
 \arguments{
 \item{target}{character. The node of interest to be modelled and mapped.}
 
-\item{statesProb}{matrix. The probability matrix as returned by \code{\link{queryNet}} and \code{queryNetParallel}.
+\item{statesProb}{matrix. The probability matrix as returned by \code{\link{queryNet}} and \code{queryNetParallel}. Named columns required, accordingly to states.
 Columns are the \code{target} node states and rows each location considered from the area of interest.}
 
 \item{what}{character. The required output, one or more of these values are valid:
@@ -76,14 +76,18 @@ network <- LandUseChange
 target <- 'FinalLULC'
 statesProb <- queryNet(network, target, evidence)
 
-maps <- mapTarget(target, statesProb, msk=currentLU)
+maps <- mapTarget(target, statesProb, msk=ConwyLU)
 
 library(raster)
 plot(maps$Class)
 plot(maps$Entropy)
 
+## Returns required outputs by coordinates for each 'msk' cell in a data frame:
+noMap <- mapTarget(target, statesProb, msk=ConwyLU, spatial=FALSE)
+head(noMap)
+
 ## Create a probability surface for the "forest" state of target node "FinalLULC"
-mp <- mapTarget('FinalLULC', statesProb, what='probability', targetState='forest', msk=currentLU)
+mp <- mapTarget('FinalLULC', statesProb, what='probability', targetState='forest', msk=ConwyLU)
 plot(mp$Probability$forest)
 
 }

@@ -9,7 +9,7 @@
 #' @rdname queryNet
 #' @inheritParams loadNetwork
 #' @param target character. The node of interest to be modelled and mapped.
-#' @param evidence matrix. Named columns are the known input variables; in rows are the discrete states associated to them for each record (NA allowed).
+#' @param evidence matrix or data.frame. Named columns are the known input variables; rows are the discrete states associated to them for each record (NA allowed).
 #' @param ... Additional arguments to fix a state (i.e. setting evidence) to one or more nodes, 
 #' as known and independent from any spatial data (e.g. the case of non-spatial variables 
 #' which are equal everywhere). Node name is provided as argument and the associated fixed state as 
@@ -29,7 +29,6 @@
 #' head(q)
 #' 
 #' ## Use parallel processing
-#' library(doParallel)
 #' q <- queryNetParallel(network, 'FinalLULC', evidence, inparallel=2)
 #' head(q)
 #' 
@@ -37,6 +36,9 @@
 queryNet <- function(network, target, evidence, ...){
     .checkNames(network, target)
     nodeNames <- network$universe$nodes
+    if(is.data.frame(evidence)){
+        evidence <- as.matrix(evidence)
+    }
     evidence <- .freezeEvidence(evidence, network, ...)
     nms <- colnames(evidence)
     if(any(nms == target)){
@@ -91,10 +93,12 @@ queryNetParallel <- function(network, target, evidence, inparallel=TRUE, ...){
     evidence <- cbind(evidence, ...)
     splittedData <- split(as.data.frame(evidence), (seq(nrow(evidence))-1) %/% (nrow(evidence)/inparallel) )
     splittedData <- lapply(seq_along(splittedData), function(x){as.matrix(splittedData[[x]], ncol=ncol(evidence))})	
-    i <- `%dopar%` <- NULL # To remove NOTE from R package release check 
-    tab <- foreach::foreach(i = seq_along(splittedData), .combine=rbind, .packages=c("gRain", "bnspatial")) %dopar% {
+    i <- NULL # To remove NOTE from R package release check 
+    #tab <- foreach::foreach(i = seq_along(splittedData), .combine=rbind, .packages=c("gRain", "bnspatial")) %dopar% {
+    o <- foreach::foreach(i = seq_along(splittedData), .combine=rbind, .packages=c("gRain", "bnspatial"))
+    tab <- foreach::"%dopar%"(o, {
         queryNet(network=network, target=target, evidence=splittedData[[i]])
-    }
+    })
     if(exists('tokenToHaltChildrenFromParallelProc', envir=parent.frame()) == FALSE){
         parallel::stopCluster(clst); gc()
     }
