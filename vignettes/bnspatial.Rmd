@@ -13,7 +13,7 @@ vignette: >
 
 ## Overview
 This document describes the package *bnspatial*. The package is aimed at implementing Bayesian networks in the geographical space. Outputs are GIS ready maps of expected value (or most likely state) given known and unknown conditions specified in the network, maps of uncertainty measured as coefficient of variation or Shannon index (entropy), maps of probability associated to any states of any node in the network. *bnspatial* can be used any time a Bayesian network contains variables for which some sort of spatial data is available and maps are needed from the model. However, it can be useful in non-spatial context as well, for instance to discretize data before querying the network, or when many iterations and/or queries over a network are needed. Utility nodes are currently under development.  
-The package is designed to facilitate the spatial implementation of Bayesian networks with minimal knowledge of the R programming language. R provides a single consistent working environment, while currently available options to make maps out of Bayesian networks do not. The package acts partly as function wrapper integrating the packages [*raster*](https://cran.r-project.org/package=raster) and [*gRain*](https://cran.r-project.org/package=gRain), but offers some additional features too, including powerful parallel processing options (via [*foreach*](https://cran.r-project.org/package=foreach) package) and data discretization routines.   Bayesian networks must be constructed beforehand, either in R, with [*gRain*](https://cran.r-project.org/package=gRain) or [*bnlearn*](https://cran.r-project.org/package=bnlearn) packages, or via an external software, such as [GeNIe](http://www.bayesfusion.com/) (free for academic use) or [Hugin](http://hugin.com/productsservices), and saved in .net file format (Hugin native format); .net files can then be imported in *bnspatial*. Currently, .net files written with [Netica](https://www.norsys.com/) are not supported, due to reading issues which are encountered by Hugin itself. A workaround is to import Netica files to GeNIe and save to .net from there.   In *bnspatial*, Bayesian networks are objects of class `grain` and therefore are queried through the functions provided by the *gRain* package. All basic GIS tasks are performed through the *raster* package and spatial data are objects of its native class `RasterLayer`.  
+The package is designed to facilitate the spatial implementation of Bayesian networks with minimal knowledge of the R programming language. R provides a single consistent working environment, while currently available options to make maps out of Bayesian networks do not. The package acts partly as function wrapper integrating the packages [*raster*](https://cran.r-project.org/package=raster) and [*gRain*](https://cran.r-project.org/package=gRain), but offers some additional features too, including powerful parallel processing options (via [*foreach*](https://cran.r-project.org/package=foreach) package) and data discretization routines.   Bayesian networks must be constructed beforehand, either in R, with [*gRain*](https://cran.r-project.org/package=gRain) or [*bnlearn*](https://cran.r-project.org/package=bnlearn) packages, or via an external software, such as [GeNIe](http://www.bayesfusion.com/) (free for academic use) or [Hugin](http://www.hugin.com/), and saved in .net file format (Hugin native format); .net files can then be imported in *bnspatial*. Currently, .net files written with [Netica](https://www.norsys.com/) are not supported, due to reading issues which are encountered by Hugin itself. A workaround is to import Netica files to GeNIe and save to .net from there.   In *bnspatial*, Bayesian networks are objects of class `grain` and therefore are queried through the functions provided by the *gRain* package. All basic GIS tasks are performed through the *raster* package and spatial data are objects of its native class `RasterLayer`.  
 Bug reports and suggestions can be submitted at https://github.com/dariomasante/bnspatial/issues .
 
 #### Acknowledgements
@@ -45,8 +45,8 @@ install.packages("raster", repos="http://cran.uk.r-project.org/", dependencies=T
 install.packages("~/bnspatial_0.9.tar.gz", repos = NULL, type="source")
 ```
 
-Reference manual: [bnspatial.pdf](https://cran.r-project.org/web/packages/bnspatial/bnspatial.pdf)  
-Vignettes: [Overview of package 'bnspatial'](https://cran.r-project.org/web/packages/bnspatial/vignettes/bnspatial.html)  
+Reference manual: [bnspatial.pdf](https://cran.r-project.org/package=bnspatial/bnspatial.pdf)  
+Vignettes: [Overview of package 'bnspatial'](https://cran.r-project.org/package=bnspatial/vignettes/bnspatial.html)  
 Also from R console:
 ```{r, eval=FALSE}
 help(package=bnspatial) ## opens package index
@@ -232,7 +232,7 @@ plot(bn$CoeffVariation, main="Uncertainty (coeff. variation)")
 
 It should be noted that this model does not return a quantitative estimate of carbon as it may be in a deterministic or process based model, but rather a quantitative *expectation* of carbon stock. That is the estimate based on uncertainty. For instance, a cell in the output raster may have any value between 15 and 175, but its land use class would be only one of three (forest, arable or other). However, the probabilities of having any of the three land use classes would vary and this variation is accounted for in the carbon stock estimate. This is not a general statement and the meaning of the expected value of a target node depends on the model structure and variables.  
 
----------------
+
 In the examples above the function `bnspatial` was used exclusively, but it can be quite inefficient when multiple options have to be tested, or the spatial data involved is big enough to require significant computing time. An option is to resort to parallel processing, by setting argument `inparallel=TRUE` (see next paragraph), or making sure that the query is run on the area of interest only, by setting argument `msk` as already shown.  
 However, these options do not prevent `bnspatial` from repeatedly loading and discretize the same data over and over, which can be a very time consuming process. To avoid that, using directly the [wider set](#anchor2) of functions provided by *bnspatial* is recommended, instead of their wrapper `bnspatial`. 
 
@@ -258,7 +258,6 @@ File names can't be provided, as they are set automatically, depending on the ou
 
 An additional comma separated file (.csv) is written to the same directory when `what` argument is `"class"`, providing a key to relate the raster values to the node states they refer to.
 
----------------
 
 ## Unfolding *bnspatial* functions {#anchor2}
 The function `bnspatial` is actually a wrapper for a bunch of other functions. Below the same example as above is used, but using explicitly the functions underneath `bnspatial`. These can all be accessed independently from the user and offer many more options to handle and process the network spatially.
