@@ -3,7 +3,6 @@
 \name{queryNet}
 \alias{queryNet}
 \alias{queryNetParallel}
-\alias{queryNetParallel}
 \title{Query the Bayesian network}
 \usage{
 queryNet(network, target, evidence, ...)

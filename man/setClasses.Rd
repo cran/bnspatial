@@ -3,7 +3,6 @@
 \name{setClasses}
 \alias{setClasses}
 \alias{importClasses}
-\alias{importClasses}
 \title{Set classes or intervals}
 \usage{
 setClasses(nodes, states, classBoundaries, wr = NULL)
