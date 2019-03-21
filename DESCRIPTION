@@ -1,7 +1,7 @@
 Package: bnspatial
 Title: Spatial Implementation of Bayesian Networks and Mapping
-Version: 1.0.4
-Date: 2019-03-07
+Version: 1.0.5
+Date: 2019-03-21
 Authors@R: c(person(given = "Dario", family = "Masante", role = c("aut", "cre"), email = "dario.masante@gmail.com"))
 Maintainer: Dario Masante <dario.masante@gmail.com>
 Copyright: Natural Environment Research Council (NERC) and Centre for
@@ -17,7 +17,7 @@ LazyData: yes
 NeedsCompilation: no
 RoxygenNote: 6.1.1
 VignetteBuilder: knitr
-Packaged: 2019-03-07 23:20:09 UTC; dario
+Packaged: 2019-03-21 00:22:47 UTC; dario
 Author: Dario Masante [aut, cre]
 Repository: CRAN
-Date/Publication: 2019-03-08 08:03:12 UTC
+Date/Publication: 2019-03-21 05:23:21 UTC
