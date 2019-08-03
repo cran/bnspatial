@@ -10,15 +10,15 @@
 #' @inheritParams loadNetwork
 #' @param target character. The node of interest to be modelled and mapped.
 #' @param evidence matrix or data.frame. Named columns are the known input variables; rows are the discrete states associated to them for each record (NA allowed).
-#' @param ... Additional arguments to fix a state (i.e. setting evidence) to one or more nodes, 
-#' as known and independent from any spatial data (e.g. the case of non-spatial variables 
-#' which are equal everywhere). Node name is provided as argument and the associated fixed state as 
-#' character; both node and state names must be typed accordingly to their names in the network.
-#' @param inparallel logical or integer. Number of cores/processors to be used by \code{queryNetParallel}. 
+#' @param ... Additional arguments to force one or more nodes to a state (i.e. fixing evidence). If the node is 
+#' associated to any input spatial data, the latter will be ignored, thus resulting spatially equal everywhere.
+#' Node name must be provided as argument and the associated fixed state as 
+#' character; both node and state names must be typed exactly as their names in the network.
+#' @param inparallel logical or integer. Number of cores to be used by \code{queryNetParallel}. 
 #' Default is TRUE, so the maximum number available minus one is set.
-#' @return A matrix of probabilities: columns are the target node states and rows are the probabilities associated to each record from argument \code{evidence} (e.g. spatial locations).
+#' @return A matrix of probabilities: columns are the states of the target node and rows are the probabilities 
+#' associated to each record (i.e. spatial locations) from \code{evidence}.
 #' @examples
-#' data(ConwyData)
 #' list2env(ConwyData, environment())
 #' 
 #' network <- LandUseChange
@@ -29,6 +29,13 @@
 #' ## Fix a given node on a state (i.e. fixed evidence) by providing an additional argument
 #' q <- queryNet(network, 'FinalLULC', evidence, Stakeholders = 'farmers')
 #' head(q)
+#' 
+#' ## Fix evidence for two nodes, including one of the spatial inputs (i.e. overriden by evidence)
+#' q <- queryNet(network, 'FinalLULC', evidence, Stakeholders = 'farmers', CurrentLULC = 'forest')
+#' head(q)
+#' ## For a programmatic approach, the arguments could be passed as named list:
+#' # lst <- list(Stakeholders = 'farmers', CurrentLULC = 'forest')
+#' # queryNet(network, 'FinalLULC', evidence, lst)
 #' 
 #' ## Use parallel processing
 #' q <- queryNetParallel(network, 'FinalLULC', evidence, inparallel=2)
@@ -51,7 +58,7 @@ queryNet <- function(network, target, evidence, ...){
         for(i in fixed){
             fix <- max(which(nms == i))
             evidence[, nms == i] <- evidence[, fix]
-            evidence <- evidence[,-fix]
+            evidence <- evidence[ ,-fix]
         }
     }
     .checkPriors(network, evidence)
@@ -60,31 +67,15 @@ queryNet <- function(network, target, evidence, ...){
         wrong = paste(inputNodes[!inputNodes %in% nodesName], collapse=', ')
         stop(paste('One or more nodes not found in the network, please check names:', wrong))
     }
-    # Create single codes to identify all existing combinations of variables state
-    # Codes are preferred as character type instead of numeric, although performance may be slightly affected
-    key <- as.factor(evidence)
-    evidenceCoded <- matrix(as.integer(key), nrow = nrow(evidence), ncol= ncol(evidence))
-    # uniqueCodes <- 1:(length(levels(key))+1) # Add an index for NAs
-    key <- c(levels(key), NA) # Add NA to lookup vector
-    evidenceCoded[is.na(evidenceCoded)] <- length(key)
-    singleCodes <- apply(evidenceCoded, 1, function(x) {paste(x, collapse="")})
+    # Create single codes to identify all existing combinations of variables state (chars still preferred to int)
+    singleCodes <- apply(evidence, 1, function(x) {paste(x, collapse="^")})
     uniCodes <- unique(singleCodes)
-    # Query the network only once for each identified combinations, then append results to all corresponding cases
+    # Query the network only once for each combination
     evidenceSingle <- as.matrix(evidence[match(uniCodes, singleCodes), ])
-    probs <- apply(evidenceSingle, 1, function(x){
-        if(all(is.na(x))){
-            out <- as.numeric(gRain::querygrain(network)[[target]])
-        } else {
-            out <- as.numeric(gRain::querygrain(gRain::setEvidence(network, inputNodes, x)) [[target]])
-        }
-        if(any(is.nan(out) | is.infinite(out))){ # Extra check to cope with 
-            stop('Impossible values have been set in the input network, e.g. zero as prior probability for an existing class.')
-        }
-        return(out)
-    })
-    probs <- t(probs)[match(singleCodes, uniCodes), ]
-    colnames(probs) <- network$universe$levels[[target]]
-    return(probs)
+    if(length(uniCodes) == 1){evidenceSingle <- t(evidenceSingle)}
+    probs <- gRain::predict.grain(network, target, inputNodes, 
+                           as.data.frame(evidenceSingle),'distribution')$pred[[target]]
+    probs[match(singleCodes, uniCodes), ]
 }
 
 #' @rdname queryNet
@@ -115,13 +106,17 @@ queryNetParallel <- function(network, target, evidence, inparallel=TRUE, ...){
 
 ## Append to evidence and return
 .freezeEvidence <- function(tab, network, ...){ 
-    ## Check if add. arg. is one on the provided nodes and substitute
+    ## Check if add. arg. is one of the provided nodes and substitute
     added <- list(...)
+    if( length(added) == 1 ){
+        added <- unlist(added, recursive=FALSE)
+    }
     args <- names(added)
     .checkNames(network, args)
     tabNames <- colnames(tab)
-    toFreeze <- added[which(args %in% tabNames)]
+    toFreeze <- added[args %in% tabNames]
     for(nm in names(toFreeze)){
+        .checkStates(toFreeze[[nm]], network$universe$levels[[nm]], nm)
         tab[, nm] <- toFreeze[[nm]]
     }
     ## Check additional args: var name in node names
@@ -148,12 +143,6 @@ queryNetParallel <- function(network, target, evidence, inparallel=TRUE, ...){
         if(any(vals < 0 | vals > 1) | sum(vvals) > length(vvals)){
             stop('Impossible probability values have been set in the input network for node: ', nm)
         }
-        # if(any(vals == 0)){
-        #     wrong <- names(vals)[vals == 0]
-        #     if(any(evidence[ ,nm] == wrong)){
-        #         stop('Cannot have zero prior probability for an existing class in the spatial data, nor for a fixed evidence state.\n  Check state "', wrong, '" of node "', nm, '"')
-        #     }
-        # }
     }
 }
 

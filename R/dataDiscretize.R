@@ -5,7 +5,7 @@
 #' by the user or, if the user provides the number of expected classes, calculated 
 #' from quantiles (default option) or by equal intervals.\cr
 #' \code{dataDiscretize} processes a single variable at a time, provided as vector.
-#' \code{bulkDiscretize} discretizes multiple input rasters, by using parallel processing.
+#' \code{bulkDiscretize} discretizes multiple input rasters, optionally by using parallel processing.
 #' @rdname dataDiscretize
 #' @aliases bulkDiscretize
 #' @param data numeric vector. The continuous data to be discretized.
@@ -50,7 +50,6 @@
 #' dataDiscretize(s, classBoundaries=c(-Inf, 0.5, Inf), classStates=c("first", "second"))[c(2,3)]
 #' 
 #' ## Discretize multiple spatial data by location
-#' data(ConwyData)
 #' list2env(ConwyData, environment())
 #' 
 #' network <- LandUseChange
@@ -66,7 +65,8 @@ dataDiscretize <- function(data, classBoundaries=NULL, classStates=NULL, method=
     mn <- min(data, na.rm=TRUE)
     mx <- max(data, na.rm=TRUE)
     
-    classBoundaries <- .makeClassBoundaries(data=data, classBoundaries=classBoundaries, classStates=classStates, method=method, mn=mn, mx=mx)
+    classBoundaries <- .makeClassBoundaries(data=data, classBoundaries=classBoundaries, 
+                                            classStates=classStates, method=method, mn=mn, mx=mx)
     
     minimum <- classBoundaries[1]
     maximum <- classBoundaries[length(classBoundaries)]
@@ -107,10 +107,12 @@ dataDiscretize <- function(data, classBoundaries=NULL, classStates=NULL, method=
                  or a vector of values to be used as class boundaries')
         }
         if(method == "quantile"){
-            classBoundaries <- stats::quantile(data, probs=cumsum(rep(1/classBoundaries, classBoundaries-1)), na.rm=TRUE, names = FALSE)
+            classBoundaries <- stats::quantile(data, probs=cumsum(rep(1/classBoundaries, classBoundaries-1)), 
+                                               na.rm=TRUE, names = FALSE)
             classBoundaries <- c(mn, classBoundaries, mx)
             if(any(duplicated(classBoundaries))){
-                stop('Non unique quantile separators (a single value may cover a substantial fraction of the data). Please specify a vector of class boundaries instead.')
+                stop('Non unique quantile separators (a single value may cover a substantial fraction of the data).',
+                     ' Please specify a vector of class boundaries instead.')
             }
         } 
         if(method == "equal"){
@@ -135,11 +137,12 @@ dataDiscretize <- function(data, classBoundaries=NULL, classStates=NULL, method=
     }
     cb <- classBoundaries[-c(1, length(classBoundaries))]
     if(any(cb < mn | cb > mx)){
-        cb <- cb[which(cb < mn | cb > mx)]
-        warning('One or more classes fall entirely out of data range. Check "classBoundaries".')
+        cb <- classStates[which(cb < mn | cb > mx)]
+        warning('One or more classes (i.e. node states) fall entirely out of input data range. Check "classBoundaries" if in doubt:  \n', 
+                paste(cb, collapse=' ; '))
     }
     if(length(cb) == 0 & any(classBoundaries[2] < mn | classBoundaries[1] > mx)){
-        stop('All classes empty. Check "classBoundaries".')
+        stop('All classes (i.e. node states) fall out of input data range. Check "classBoundaries" or the input data.')
     }
     return(classBoundaries)
     }
@@ -148,10 +151,16 @@ dataDiscretize <- function(data, classBoundaries=NULL, classStates=NULL, method=
 #' @export
 bulkDiscretize <- function(formattedLst, xy, inparallel=FALSE){
     inparallel <- .inParallel(inparallel)
+    is.sf <- 'sf' %in% class(formattedLst$SpatialData)
+    if(is.sf) formattedLst['SpatialData'] <- NULL
     if(inparallel == 1){
         lst <- lapply(names(formattedLst), function(x){
-            rst <- formattedLst[[x]]$Raster
-            ex <- extractByMask(rast=rst, msk=xy)
+            if(is.sf){
+                ex <- formattedLst[[x]]$SpatialData[xy]
+            } else {
+                layer <- formattedLst[[x]]$SpatialData
+                ex <- extractByMask(layer, msk=xy)
+            }
             if(formattedLst[[x]]$Categorical == TRUE){
                 formattedLst[[x]]$States[match(ex, formattedLst[[x]]$ClassBoundaries)]
             } else {
@@ -160,18 +169,25 @@ bulkDiscretize <- function(formattedLst, xy, inparallel=FALSE){
         })
         df <- matrix(unlist(lst), ncol=length(lst))
     } else {
-        splittedData <- split(as.data.frame(xy), (seq(nrow(xy))-1) %/% (nrow(xy) / inparallel ) )
+        if(is.sf){
+            splittedData <- split(xy, ceiling(seq_along(xy)/inparallel))
+        } else {
+            splittedData <- split(as.data.frame(xy), (seq(nrow(xy))-1) %/% (nrow(xy) / inparallel ) )
+        }
         if(exists('tokenToHaltChildrenFromParallelProc', envir=parent.frame()) == FALSE){
             clst <- parallel::makeCluster(inparallel)
             doParallel::registerDoParallel(clst)
         }
-        i <- NULL # To remove NOTE from R package release check 
-        #df <- foreach::foreach(i = seq_along(splittedData), .combine=rbind, .packages="raster") %dopar% {
+        i <- NULL # Trick to remove NOTE from R package release check 
         o <- foreach::foreach(i = seq_along(splittedData), .combine=rbind, .packages="raster")
         df <- foreach::"%dopar%"(o, {
             lst <- lapply(names(formattedLst), function(x){
-                rst <- formattedLst[[x]]$Raster
-                ex <- extractByMask(rast=rst, msk=as.matrix(splittedData[[i]]))
+                if(is.sf){
+                    ex <- formattedLst[[x]]$SpatialData[splittedData[[i]] ]
+                } else {
+                    layer <- formattedLst[[x]]$SpatialData
+                    ex <- extractByMask(layer, msk=as.matrix(splittedData[[i]]))
+                }
                 if(formattedLst[[x]]$Categorical == TRUE){
                     formattedLst[[x]]$States[match(ex, formattedLst[[x]]$ClassBoundaries)]
                 } else {
@@ -188,6 +204,7 @@ bulkDiscretize <- function(formattedLst, xy, inparallel=FALSE){
     return(df)
 }
 
+###
 .inParallel <- function(inparallel){
     if(is.logical(inparallel)){
         nc <- ifelse(inparallel == TRUE, parallel::detectCores()-1, 1)

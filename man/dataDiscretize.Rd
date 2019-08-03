@@ -49,7 +49,7 @@ These functions discretize continuous input data into classes. Classes can be de
 by the user or, if the user provides the number of expected classes, calculated 
 from quantiles (default option) or by equal intervals.\cr
 \code{dataDiscretize} processes a single variable at a time, provided as vector.
-\code{bulkDiscretize} discretizes multiple input rasters, by using parallel processing.
+\code{bulkDiscretize} discretizes multiple input rasters, optionally by using parallel processing.
 }
 \details{
 dataDiscretize
@@ -72,7 +72,6 @@ dataDiscretize(s, classBoundaries=c(0, 0.5, 1), classStates=c("first", "second")
 dataDiscretize(s, classBoundaries=c(-Inf, 0.5, Inf), classStates=c("first", "second"))[c(2,3)]
 
 ## Discretize multiple spatial data by location
-data(ConwyData)
 list2env(ConwyData, environment())
 
 network <- LandUseChange

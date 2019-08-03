@@ -1,3 +1,13 @@
+bnspatial v1.1 (Release date: 2019-08-02)
+-----------------------------------------------
+CHANGES:
+
+* Vectorial spatial data now allowed, using package "sf" (all functions changed accordingly)
+* Removed some redundancy in internal code, plus some cosmetics and minor edits in flow control inside hidden internal functions
+* Added a shapefile to the example dataset, and changed some features in example rasters
+* Performance improvements
+* Some function arguments deprecated, but still back-compatible
+
 bnspatial v1.0.5 (Release date: 2019-03-21)
 -----------------------------------------------
 CHANGES:
@@ -5,11 +15,13 @@ CHANGES:
 * Bug fix on mapTarget output probabilities under specific circumstances
 * Add system of reference and remove names for all spatial outputs
 
+
 bnspatial v1.0.4 (Release date: 2019-03-07)
 -----------------------------------------------
 CHANGES:
 
 * Updated to R 3.5 with Bioconductor 3.8 installation notes
+
 
 bnspatial v1.0.3 (Release date: 2017-11-16)
 -----------------------------------------------
