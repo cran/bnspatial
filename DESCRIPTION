@@ -1,7 +1,7 @@
 Package: bnspatial
 Title: Spatial Implementation of Bayesian Networks and Mapping
-Version: 1.1
-Date: 2019-08-02
+Version: 1.1.1
+Date: 2020-01-16
 Authors@R: c(person(given = "Dario", family = "Masante", role = c("aut", "cre"), email = "dario.masante@gmail.com"))
 Maintainer: Dario Masante <dario.masante@gmail.com>
 Copyright: Centre for Ecology and Hydrology - CEH
@@ -9,14 +9,15 @@ URL: http://github.com/dariomasante/bnspatial
 BugReports: https://github.com/dariomasante/bnspatial/issues
 Imports: raster, rgdal, sf, gRbase, gRain, doParallel, foreach, utils
 Suggests: knitr, rmarkdown
-Description: Allows spatial implementation of Bayesian networks and mapping in geographical space. It makes maps of expected value (or most likely state) given known and unknown conditions, maps of uncertainty measured as coefficient of variation or Shannon index (entropy), maps of probability associated to any states of any node of the network. Some additional features are provided as well: parallel processing options, data discretization routines and function wrappers designed for users with minimal knowledge of the R language. Outputs can be exported to any common GIS format. Development was funded by the European Union FP7 (2007-2013), under project ROBIN (<http://robinproject.info>).
+Description: Allows spatial implementation of Bayesian networks and mapping in geographical space. It makes maps of expected value (or most likely state) given known and unknown conditions, maps of uncertainty measured as coefficient of variation or Shannon index (entropy), maps of probability associated to any states of any node of the network. Some additional features are provided as well: parallel processing options, data discretization routines and function wrappers designed for users with minimal knowledge of the R language. Outputs can be exported to any common GIS format. 
 License: GPL-3
 LazyLoad: yes
 LazyData: yes
 NeedsCompilation: no
-RoxygenNote: 6.1.1.9000
+RoxygenNote: 7.0.2
 VignetteBuilder: knitr
-Packaged: 2019-08-03 09:39:39 UTC; dario
+Packaged: 2020-01-16 22:02:14 UTC; dario
 Author: Dario Masante [aut, cre]
+Depends: R (>= 3.5.0)
 Repository: CRAN
-Date/Publication: 2019-08-03 10:00:02 UTC
+Date/Publication: 2020-01-17 08:10:02 UTC

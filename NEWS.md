@@ -1,3 +1,13 @@
+bnspatial v1.1.1 (Release date: 2020-01-16)
+-----------------------------------------------
+CHANGES:
+
+* Entropy calculation fixed to vase 2 log and to adjust for certain outcome (prob. = 1) and zeros
+* Changes to the internals to accomodate for updates in `gRain` and `gRbase` packages (mainly function `loadNetwork`)
+* Smaller and simpler example vectorial data
+* Bug fix on NA handling by linkMultiple with vectorial data
+
+
 bnspatial v1.1 (Release date: 2019-08-02)
 -----------------------------------------------
 CHANGES:
@@ -7,6 +17,7 @@ CHANGES:
 * Added a shapefile to the example dataset, and changed some features in example rasters
 * Performance improvements
 * Some function arguments deprecated, but still back-compatible
+
 
 bnspatial v1.0.5 (Release date: 2019-03-21)
 -----------------------------------------------
